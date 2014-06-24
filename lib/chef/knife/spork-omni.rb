@@ -1,13 +1,13 @@
 require 'chef/knife'
+begin
+  require 'berkshelf'
+rescue LoadError; end
 
 module KnifeSpork
   class SporkOmni < Chef::Knife
 
     deps do
       require 'knife-spork/runner'
-      begin
-        require 'berkshelf'
-      rescue LoadError; end
     end
 
     banner 'knife spork omni COOKBOOK (options)'
