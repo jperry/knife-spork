@@ -79,30 +79,30 @@ module KnifeSpork
       @cookbooks.reverse.each do |cookbook|
         begin
           check_dependencies(cookbook)
-          if name_args.include?(cookbook.name.to_s)
+          if name_args.include?(cookbook.metadata.name.to_s)
             uploader = Chef::CookbookUploader.new(cookbook, ::Chef::Config.cookbook_path)
             begin
               if uploader.respond_to?(:upload_cookbooks)
                 # Chef >= 10.14.0
                 uploader.upload_cookbooks
-                ui.info "Freezing #{cookbook.name} at #{cookbook.version}..."
+                ui.info "Freezing #{cookbook.metadata.name} at #{cookbook.version}..."
                 cookbook.freeze_version
                 uploader.upload_cookbooks
               else
                 uploader.upload_cookbook
-                ui.info "Freezing #{cookbook.name} at #{cookbook.version}..."
+                ui.info "Freezing #{cookbook.metadata.name} at #{cookbook.version}..."
                 cookbook.freeze_version
                 uploader.upload_cookbook
 
               end
             rescue Chef::Exceptions::CookbookFrozen => msg
-              ui.error "#{cookbook.name}@#{cookbook.version} is frozen. Please bump your version number before continuing!"
+              ui.error "#{cookbook.metadata.name}@#{cookbook.version} is frozen. Please bump your version number before continuing!"
               exit(1)
             end
           end
         rescue Net::HTTPServerException => e
           if e.response.code == '409'
-            ui.error "#{cookbook.name}@#{cookbook.version} is frozen. Please bump your version number before continuing!"
+            ui.error "#{cookbook.metadata.name}@#{cookbook.version} is frozen. Please bump your version number before continuing!"
             exit(1)
           else
             raise
@@ -117,7 +117,7 @@ module KnifeSpork
     def check_dependencies(cookbook)
       cookbook.metadata.dependencies.each do |cookbook_name, version|
         unless server_side_cookbooks(cookbook_name, version)
-          ui.error "#{cookbook.name} depends on #{cookbook_name} (#{version}), which is not currently being uploaded and cannot be found on the server!"
+          ui.error "#{cookbook.metadata.name} depends on #{cookbook_name} (#{version}), which is not currently being uploaded and cannot be found on the server!"
           exit(1)
         end
       end

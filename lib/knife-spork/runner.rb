@@ -26,7 +26,7 @@ module KnifeSpork
       end
 
       def run_plugins(hook)
-        cookbooks = [ @cookbooks || @cookbook ].flatten.compact.collect{|cookbook| cookbook.is_a?(::Chef::CookbookVersion) ? cookbook : load_cookbook(cookbook)}.sort{|a,b| a.name.to_s <=> b.name.to_s}
+        cookbooks = [ @cookbooks || @cookbook ].flatten.compact.collect{|cookbook| cookbook.is_a?(::Chef::CookbookVersion) ? cookbook : load_cookbook(cookbook)}.sort{|a,b| a.metadata.name.to_s <=> b.metadata.name.to_s}
 
         # Affects promote only:
         # Set loaded cookbook version if the -v or --version parameter was specified
@@ -34,7 +34,7 @@ module KnifeSpork
         # We know cookbooks will only contain one cookbook in the case of promote.
         cookbooks.map{|c|c.version = config[:version]} if config[:version]
 
-        environments = [ @environments || @environment ].flatten.compact.collect{|environment| environment.is_a?(::Chef::Environment) ? environment : load_environment_from_file(environment)}.sort{|a,b| a.name.to_s <=> b.name.to_s}
+        environments = [ @environments || @environment ].flatten.compact.collect{|environment| environment.is_a?(::Chef::Environment) ? environment : load_environment_from_file(environment)}.sort{|a,b| a.metadata.name.to_s <=> b.metadata.name.to_s}
         environment_diffs = @environment_diffs
 
         KnifeSpork::Plugins.run(
