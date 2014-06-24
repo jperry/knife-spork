@@ -165,18 +165,14 @@ module KnifeSpork
       def load_from_berkshelf(name)
         return unless defined?(::Berkshelf)
         berksfile = ::Berkshelf::Berksfile.from_file(self.config[:berksfile])
-        lockfile = ::Berkshelf::Lockfile.new(berksfile)
+        lockfile = ::Berkshelf::Lockfile.from_berksfile(berksfile)
 
         raise Berkshelf::BerkshelfError, "LockFileNotFound" unless File.exists?(lockfile.filepath)
 
-        cookbook = Berkshelf.ui.mute {
-          self.config[:skip_dependencies] ||= false
-          berksfile.resolve(lockfile.find(name), {skip_dependencies: self.config[:skip_dependencies]})[:solution].first
-        }
+        cookbook = lockfile.retrieve(name)
 
         #convert Berkshelf::CachedCookbook to Chef::CookbookVersion
-        ::Chef::CookbookLoader.new(File.dirname(cookbook.path))[name]
-
+        ::Chef::CookbookLoader.new(File.dirname(cookbook.path))[File.basename(cookbook.path)]
       end
 
       # @todo #opensource
