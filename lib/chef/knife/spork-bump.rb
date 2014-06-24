@@ -1,4 +1,8 @@
 require 'chef/knife'
+begin
+  require 'berkshelf'
+rescue LoadError; end
+
 
 module KnifeSpork
   class SporkBump < Chef::Knife
@@ -18,7 +22,7 @@ module KnifeSpork
     if defined?(::Berkshelf)
       option :berksfile,
         :short => '-b',
-        :long => 'berksfile',
+        :long => '--berksfile BERKSFILE',
         :description => 'Path to a Berksfile to operate off of',
         :default => File.join(Dir.pwd, ::Berkshelf::DEFAULT_FILENAME)
 
@@ -74,7 +78,7 @@ module KnifeSpork
       new_contents = File.read(metadata_file).gsub(/(version\s+['"])[0-9\.]+(['"])/, "\\1#{new_version}\\2")
       File.open(metadata_file, 'w'){ |f| f.write(new_contents) }
 
-      ui.info "Successfully bumped #{@cookbook.name} to v#{new_version}!"
+      ui.info "Successfully bumped #{@cookbook.metadata.name} to v#{new_version}!"
     end
 
     def bump_type

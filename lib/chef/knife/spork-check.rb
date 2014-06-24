@@ -1,4 +1,7 @@
 require 'chef/knife'
+begin
+  require 'berkshelf'
+rescue LoadError; end
 
 module KnifeSpork
   class SporkCheck < Chef::Knife
@@ -27,7 +30,7 @@ module KnifeSpork
     if defined?(::Berkshelf)
       option :berksfile,
         :short => '-b',
-        :long => 'berksfile',
+        :long => '--berksfile BERKSFILE',
         :description => 'Path to a Berksfile to operate off of',
         :default => File.join(Dir.pwd, ::Berkshelf::DEFAULT_FILENAME)
 
@@ -62,7 +65,7 @@ module KnifeSpork
 
     private
     def check
-      ui.msg "Checking versions for cookbook #{@cookbook.name}..."
+      ui.msg "Checking versions for cookbook #{@cookbook.metadata.name}..."
       ui.msg ""
       ui.msg "Local Version:"
       ui.msg "  #{local_version}"
@@ -88,13 +91,13 @@ module KnifeSpork
               answer = nil
               unless config[:yes]
                 ui.warn("#{message}")
-                answer = ui.ask("Would you like to perform a patch-level bump on the #{@cookbook.name} cookbook now? (Y/N)")
+                answer = ui.ask("Would you like to perform a patch-level bump on the #{@cookbook.metadata.name} cookbook now? (Y/N)")
               else
                 ui.warn message_autobump
               end
               if config[:yes] or answer == "Y" or answer == "y"
                 bump = SporkBump.new
-                bump.name_args = [@cookbook.name,"patch"]
+                bump.name_args = [@cookbook.metadata.name,"patch"]
                 bump.run
               else
                 ui.info "Skipping bump..."
@@ -128,13 +131,13 @@ module KnifeSpork
     def remote_versions
       @remote_versions ||= begin
         environment = config[:environment]
-        api_endpoint = environment ? "environments/#{environment}/cookbooks/#{@cookbook.name}" : "cookbooks/#{@cookbook.name}"
+        api_endpoint = environment ? "environments/#{environment}/cookbooks/#{@cookbook.metadata.name}" : "cookbooks/#{@cookbook.metadata.name}"
         cookbooks = rest.get_rest(api_endpoint)
 
-        versions = cookbooks[@cookbook.name.to_s]['versions']
+        versions = cookbooks[@cookbook.metadata.name.to_s]['versions']
         (config[:all] ? versions : versions[0..4]).collect{|v| v['version']}
       rescue Net::HTTPServerException => e
-        ui.info "#{@cookbook.name} does not yet exist on the Chef Server!"
+        ui.info "#{@cookbook.metadata.name} does not yet exist on the Chef Server!"
         return []
       end
     end
@@ -144,7 +147,7 @@ module KnifeSpork
 
       @versions_cache[version.to_sym] ||= begin
         environment = config[:environment]
-        api_endpoint = environment ? "environments/#{environment}/cookbooks/#{@cookbook.name}" : "cookbooks/#{@cookbook.name}/#{version}"
+        api_endpoint = environment ? "environments/#{environment}/cookbooks/#{@cookbook.metadata.name}" : "cookbooks/#{@cookbook.metadata.name}/#{version}"
         rest.get_rest(api_endpoint).to_hash['frozen?']
       end
     end
